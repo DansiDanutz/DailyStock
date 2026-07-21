@@ -32,6 +32,7 @@ export default async function Home() {
             <span className="brand-sub">Decision Dashboard</span>
           </div>
           <div className="header-meta">
+            <a className="nav-link" href="/intel">Crypto Intel →</a>
             <span className="live-dot" aria-hidden="true" />
             <span>{today}</span>
           </div>
@@ -161,6 +162,13 @@ export default async function Home() {
               ))}
             </div>
           )}
+          <div className="intel-teaser">
+            <p>
+              <strong>Go deeper:</strong> win-rate-filtered smart signals, 47-indicator timeframe alignment and
+              live liquidation flow from the Zmarty engine — fused into one confluence verdict per coin.
+            </p>
+            <a className="cta-btn" href="/intel">Open Crypto Intelligence →</a>
+          </div>
         </section>
 
         <section aria-labelledby="tips-heading">

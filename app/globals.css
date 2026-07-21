@@ -195,6 +195,107 @@ section { padding-bottom: var(--space-section); }
 .tip-card h3 { font-size: 1.02rem; font-weight: 620; letter-spacing: -0.01em; }
 .tip-card p { color: var(--text-dim); font-size: var(--text-sm); }
 
+/* ---------- intel: confluence verdicts ---------- */
+.verdict-card {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.2rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.verdict-card.bullish-confluence { border-color: rgba(47, 212, 140, 0.4); box-shadow: 0 0 24px rgba(47, 212, 140, 0.07); }
+.verdict-card.bearish-confluence { border-color: rgba(255, 93, 108, 0.4); box-shadow: 0 0 24px rgba(255, 93, 108, 0.07); }
+.verdict-top { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-mono); }
+.verdict-top .sym { font-weight: 700; font-size: 1.05rem; }
+.verdict-top .px { color: var(--text-dim); }
+.verdict-label { font-weight: 700; letter-spacing: -0.01em; font-size: 1.1rem; }
+.verdict-label.bullish-confluence { color: var(--up); }
+.verdict-label.bearish-confluence { color: var(--down); }
+.verdict-label.divergence { color: var(--neutral); }
+.verdict-label.no-edge { color: var(--text-dim); }
+.verdict-detail { color: var(--text-dim); font-size: var(--text-sm); }
+.lens-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
+.lens {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  padding: 0.24rem 0.6rem; border-radius: 999px;
+  border: 1px solid var(--panel-border); background: var(--bg-raised);
+  color: var(--text-dim);
+}
+.lens.up { color: var(--up); border-color: rgba(47, 212, 140, 0.3); }
+.lens.down { color: var(--down); border-color: rgba(255, 93, 108, 0.3); }
+
+/* ---------- intel: smart signals ---------- */
+.signal-empty {
+  display: flex; gap: 1.1rem; align-items: flex-start;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+  background: var(--panel); padding: 1.3rem 1.4rem;
+}
+.signal-empty-badge {
+  font-family: var(--font-mono); font-size: var(--text-xs); white-space: nowrap;
+  color: var(--neutral); background: var(--neutral-soft);
+  border: 1px solid rgba(232, 183, 74, 0.3);
+  padding: 0.3rem 0.7rem; border-radius: 999px; letter-spacing: 0.1em;
+}
+.signal-empty p { color: var(--text-dim); font-size: var(--text-sm); margin-top: 0.3rem; }
+.signal-kv { display: flex; flex-direction: column; gap: 0.35rem; }
+.kv-row { display: flex; justify-content: space-between; gap: 1rem; font-size: var(--text-sm); }
+.kv-key { color: var(--text-faint); text-transform: capitalize; }
+.kv-val { font-family: var(--font-mono); }
+
+/* ---------- intel: liquidation flow ---------- */
+.liq-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.liq-row {
+  display: grid; grid-template-columns: 120px 1fr auto; gap: 1.2rem; align-items: center;
+  border: 1px solid var(--panel-border); border-radius: var(--radius-sm);
+  background: var(--bg-raised); padding: 0.75rem 1rem;
+}
+.liq-id { display: flex; flex-direction: column; }
+.liq-id .sym { font-family: var(--font-mono); font-weight: 700; }
+.liq-px { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-dim); }
+.liq-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: rgba(148,178,255,0.08); }
+.liq-bar .longs { background: var(--down); }
+.liq-bar .shorts { background: var(--up); }
+.liq-legend { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--text-xs); margin-top: 0.3rem; }
+.liq-legend .up { color: var(--up); }
+.liq-legend .down { color: var(--down); }
+.liq-meta { display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end; }
+.section-note { color: var(--text-faint); font-size: var(--text-sm); margin-top: 1rem; max-width: 68ch; }
+
+/* ---------- intel: MTF matrix ---------- */
+.mtf-table td { white-space: nowrap; }
+.mtf-cell { font-family: var(--font-mono); }
+
+/* ---------- intel: CTA ---------- */
+.intel-cta {
+  text-align: center; border: 1px solid var(--panel-border); border-radius: var(--radius);
+  background: var(--panel); padding: 2.5rem 1.5rem; margin-bottom: var(--space-section);
+}
+.intel-cta h2 { font-size: var(--text-lg); margin-bottom: 0.5rem; }
+.intel-cta p { color: var(--text-dim); max-width: 52ch; margin: 0 auto 1.2rem; }
+.cta-btn {
+  display: inline-block; font-weight: 600;
+  background: var(--up-soft); color: var(--up);
+  border: 1px solid rgba(47, 212, 140, 0.4); border-radius: 999px;
+  padding: 0.6rem 1.5rem;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.cta-btn:hover { text-decoration: none; transform: translateY(-1px); }
+
+/* ---------- intel teaser (homepage) ---------- */
+.intel-teaser {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+  border: 1px solid rgba(110, 168, 255, 0.25); border-radius: var(--radius);
+  background: var(--accent-soft); padding: 1.1rem 1.4rem; margin-top: 1.2rem;
+}
+.intel-teaser p { color: var(--text-dim); font-size: var(--text-sm); }
+.intel-teaser strong { color: var(--text); }
+.nav-link { font-size: var(--text-sm); font-family: var(--font-mono); }
+
+@media (max-width: 560px) {
+  .liq-row { grid-template-columns: 1fr; gap: 0.6rem; }
+  .liq-meta { align-items: flex-start; flex-direction: row; }
+}
+
 /* ---------- footer ---------- */
 .site-footer {
   border-top: 1px solid var(--panel-border);
