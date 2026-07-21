@@ -19,7 +19,38 @@ const HISTORY_REVALIDATE_SECONDS = 3600; // win-rate history moves slowly
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** 180 days of daily closes — the walk-forward window for crypto win rates. */
+/**
+ * Primary daily-history source: OKX 1D candles (newest first, string fields).
+ * OKX is reliably reachable from Vercel's runtime and doesn't throttle the
+ * shared egress IPs the way CoinGecko's free tier does.
+ */
+async function getDailyHistoryOkx(symbol: string): Promise<SeriesPoint[] | null> {
+  try {
+    const url = `https://www.okx.com/api/v5/market/candles?instId=${encodeURIComponent(symbol)}-USDT&bar=1D&limit=200`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: HISTORY_REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json?.code !== '0' || !Array.isArray(json.data)) return null;
+    const series: SeriesPoint[] = json.data
+      .slice()
+      .reverse() // newest-first → chronological
+      .map((row: string[]) => ({
+        close: Number(row[4]),
+        high: Number(row[2]),
+        low: Number(row[3]),
+      }))
+      .filter((p: SeriesPoint) => Number.isFinite(p.close));
+    return series.length >= 90 ? series : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Fallback daily history: CoinGecko market_chart (180d, heavily rate-limited). */
 async function getDailyHistory(id: string): Promise<SeriesPoint[] | null> {
   const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=180`;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -83,7 +114,12 @@ export async function getCryptoCards(limit = 9): Promise<CryptoCardData[]> {
     for (const c of selected) {
       const prices: number[] = c.sparkline_in_7d?.price ?? [];
       const hourlySeries = prices.map((p) => ({ close: p, high: p, low: p }));
-      const daily = await getDailyHistory(c.id);
+      const symbolUpper = (c.symbol as string).toUpperCase();
+      let daily = await getDailyHistoryOkx(symbolUpper);
+      if (!daily) {
+        daily = await getDailyHistory(c.id);
+        await sleep(400); // pace CoinGecko fallback calls — successes and 429s alike
+      }
       // Daily series (180d) gives a real trend read + walk-forward win rate;
       // the 7d hourly sparkline is the fallback scoring basis.
       const signals: Signals = computeSignals(daily ?? hourlySeries);
@@ -101,7 +137,6 @@ export async function getCryptoCards(limit = 9): Promise<CryptoCardData[]> {
         signals,
         winRate: daily ? backtestWinRate(daily, signals) : null,
       });
-      await sleep(400); // pace every history call — successes and 429s alike
     }
     return cards.sort((a, b) => b.signals.score - a.signals.score);
   } catch {
