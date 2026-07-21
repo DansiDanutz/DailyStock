@@ -1,9 +1,10 @@
 interface ScoreDialProps {
   score: number; // 0..100
+  label?: string;
 }
 
-/** 270° SVG arc dial for the composite momentum score. */
-export default function ScoreDial({ score }: ScoreDialProps) {
+/** 270° SVG arc dial for any 0-100 gauge (momentum score, fear & greed…). */
+export default function ScoreDial({ score, label = 'SCORE' }: ScoreDialProps) {
   const size = 64;
   const stroke = 5;
   const r = (size - stroke) / 2;
@@ -35,7 +36,7 @@ export default function ScoreDial({ score }: ScoreDialProps) {
         {score}
       </text>
       <text x={c} y={c + 15} textAnchor="middle" fill="var(--text-faint)" fontSize="7" letterSpacing="1" fontFamily="var(--font-mono)">
-        SCORE
+        {label}
       </text>
     </svg>
   );

@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import ScoreDial from '@/components/ScoreDial';
 import { getCryptoCards } from '@/lib/crypto';
 import { getIntelBundle, INTEL_SYMBOLS } from '@/lib/zmarty';
+import { getPulseBundle } from '@/lib/pulse';
 import { fuse, FusionVerdict } from '@/lib/fusion';
 import type { Metadata } from 'next';
 
@@ -17,6 +19,8 @@ const fmtUsd = (v: number) =>
   : v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M`
   : v >= 1_000 ? `$${(v / 1_000).toFixed(1)}K`
   : `$${v.toFixed(0)}`;
+
+const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 
 const fmtPrice = (v: number) =>
   v >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 0 })
@@ -58,7 +62,7 @@ function VerdictCard({ v, price }: { v: FusionVerdict; price: number | null }) {
 }
 
 export default async function IntelPage() {
-  const [bundle, cryptoCards] = await Promise.all([getIntelBundle(), getCryptoCards(20)]);
+  const [bundle, cryptoCards, pulse] = await Promise.all([getIntelBundle(), getCryptoCards(20), getPulseBundle()]);
   const bySymbol = new Map(cryptoCards.map((c) => [c.symbol, c]));
 
   const verdicts = INTEL_SYMBOLS.map((sym) =>
@@ -114,6 +118,69 @@ export default async function IntelPage() {
         </p>
         <span className="disclaimer-chip">Educational only — not financial advice</span>
       </section>
+
+      {(pulse.fearGreed || pulse.global || pulse.btcNetwork) && (
+        <section aria-labelledby="pulse-heading">
+          <div className="section-head">
+            <h2 id="pulse-heading">
+              <span className="kicker">Open-source trackers · alternative.me / CoinGecko / mempool.space</span>
+              Market pulse
+            </h2>
+          </div>
+          <div className="pulse-grid">
+            {pulse.fearGreed && (
+              <div className="pulse-panel fng-panel">
+                <div className="pulse-title">Fear &amp; Greed</div>
+                <div className="fng-body">
+                  <ScoreDial score={pulse.fearGreed.value} label="F&G" />
+                  <div>
+                    <div className={`fng-label ${pulse.fearGreed.value >= 55 ? 'up' : pulse.fearGreed.value <= 45 ? 'down' : 'flat'}`}>
+                      {pulse.fearGreed.label}
+                    </div>
+                    {pulse.fearGreed.yesterdayValue !== null && (
+                      <div className="rsi-note">yesterday {pulse.fearGreed.yesterdayValue}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {pulse.global && (
+              <div className="pulse-panel">
+                <div className="pulse-title">Global crypto market</div>
+                <div className="pulse-stat-row">
+                  <span className="pulse-num">${(pulse.global.totalMarketCapUsd / 1e12).toFixed(2)}T</span>
+                  {pulse.global.marketCapChange24hPct !== null && (
+                    <span className={`chg ${pulse.global.marketCapChange24hPct >= 0 ? 'up' : 'down'}`}>
+                      {fmtPct(pulse.global.marketCapChange24hPct)} 24h
+                    </span>
+                  )}
+                </div>
+                <div className="pulse-substats">
+                  {pulse.global.btcDominancePct !== null && <span>BTC dom {pulse.global.btcDominancePct.toFixed(1)}%</span>}
+                  {pulse.global.ethDominancePct !== null && <span>ETH dom {pulse.global.ethDominancePct.toFixed(1)}%</span>}
+                  {pulse.global.activeCryptos !== null && <span>{pulse.global.activeCryptos.toLocaleString('en-US')} assets</span>}
+                </div>
+              </div>
+            )}
+            {pulse.btcNetwork && (
+              <div className="pulse-panel">
+                <div className="pulse-title">BTC network</div>
+                <div className="pulse-stat-row">
+                  <span className="pulse-num">{pulse.btcNetwork.fastestFee} sat/vB</span>
+                  <span className="rsi-note">fastest fee</span>
+                </div>
+                <div className="pulse-substats">
+                  <span>30min {pulse.btcNetwork.halfHourFee} sat/vB</span>
+                  <span>economy {pulse.btcNetwork.economyFee} sat/vB</span>
+                  {pulse.btcNetwork.mempoolTxCount !== null && (
+                    <span>{(pulse.btcNetwork.mempoolTxCount / 1000).toFixed(0)}k txs queued</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="confluence-heading">
         <div className="section-head">
@@ -277,6 +344,62 @@ export default async function IntelPage() {
         )}
       </section>
 
+      {(pulse.trending.length > 0 || pulse.chains.length > 0) && (
+        <section aria-labelledby="crowd-heading">
+          <div className="section-head">
+            <h2 id="crowd-heading">
+              <span className="kicker">Crowd &amp; capital · CoinGecko trending / DefiLlama TVL</span>
+              Where attention and money sit
+            </h2>
+          </div>
+          <div className="crowd-grid">
+            {pulse.trending.length > 0 && (
+              <div className="pulse-panel">
+                <div className="pulse-title">Trending searches right now</div>
+                <ol className="trend-list">
+                  {pulse.trending.map((t) => (
+                    <li key={t.symbol + t.name}>
+                      <span className="sym">{t.symbol}</span>
+                      <span className="nm">{t.name}</span>
+                      <span className="trend-right">
+                        {t.marketCapRank !== null && <span className="rsi-note">#{t.marketCapRank}</span>}
+                        {t.change24hPct !== null && (
+                          <span className={`chg ${t.change24hPct >= 0 ? 'up' : 'down'}`}>{fmtPct(t.change24hPct)}</span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="section-note" style={{ marginTop: '0.8rem' }}>
+                  Crowd attention is a contrarian input as often as a momentum one — trending is where volatility
+                  lives, not where safety does.
+                </p>
+              </div>
+            )}
+            {pulse.chains.length > 0 && (
+              <div className="pulse-panel">
+                <div className="pulse-title">DeFi TVL by chain</div>
+                <div className="tvl-list">
+                  {pulse.chains.map((c) => {
+                    const max = pulse.chains[0].tvlUsd || 1;
+                    return (
+                      <div className="tvl-row" key={c.name}>
+                        <span className="nm">{c.name}</span>
+                        <span className="tvl-bar"><i style={{ width: `${Math.max(4, (c.tvlUsd / max) * 100)}%` }} /></span>
+                        <span className="tvl-val">${(c.tvlUsd / 1e9).toFixed(1)}B</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="section-note" style={{ marginTop: '0.8rem' }}>
+                  Total value locked shows where capital actually commits — slower than price, harder to fake.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       <section aria-labelledby="cta-heading" className="intel-cta">
         <h2 id="cta-heading">Want the full engine?</h2>
         <p>
@@ -291,7 +414,10 @@ export default async function IntelPage() {
       <footer className="site-footer">
         <span>
           Intelligence: <a href="https://zmarty.me" target="_blank" rel="noopener noreferrer">Zmarty</a> live API ·
-          Prices: CoinGecko · <Link href="/">← Daily board</Link>
+          Open data: <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">alternative.me</a>,{' '}
+          CoinGecko, <a href="https://defillama.com" target="_blank" rel="noopener noreferrer">DefiLlama</a>,{' '}
+          <a href="https://mempool.space" target="_blank" rel="noopener noreferrer">mempool.space</a> ·{' '}
+          <Link href="/">← Daily board</Link>
         </span>
         <span>
           Verdicts are deterministic fusions of independent quantitative systems, not recommendations.

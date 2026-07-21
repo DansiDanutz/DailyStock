@@ -265,6 +265,50 @@ section { padding-bottom: var(--space-section); }
 .mtf-table td { white-space: nowrap; }
 .mtf-cell { font-family: var(--font-mono); }
 
+/* ---------- intel: market pulse & crowd panels ---------- */
+.pulse-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.crowd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+.pulse-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.7rem;
+}
+.pulse-title {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.14em;
+}
+.fng-body { display: flex; align-items: center; gap: 1rem; }
+.fng-label { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em; }
+.fng-label.up { color: var(--up); }
+.fng-label.down { color: var(--down); }
+.fng-label.flat { color: var(--neutral); }
+.pulse-stat-row { display: flex; align-items: baseline; gap: 0.7rem; }
+.pulse-num { font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem; }
+.pulse-substats {
+  display: flex; gap: 0.9rem; flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-dim);
+}
+
+.trend-list { list-style: none; display: flex; flex-direction: column; }
+.trend-list li {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  padding: 0.42rem 0; border-bottom: 1px solid rgba(148, 178, 255, 0.06);
+  font-size: var(--text-sm);
+}
+.trend-list li:last-child { border-bottom: none; }
+.trend-list .sym { font-family: var(--font-mono); font-weight: 700; min-width: 4.2em; }
+.trend-list .nm { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trend-right { margin-left: auto; display: flex; gap: 0.7rem; align-items: baseline; font-family: var(--font-mono); }
+
+.tvl-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.tvl-row { display: grid; grid-template-columns: 90px 1fr 64px; align-items: center; gap: 0.7rem; font-size: var(--text-sm); }
+.tvl-row .nm { color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tvl-bar { height: 8px; border-radius: 4px; background: rgba(148, 178, 255, 0.08); overflow: hidden; }
+.tvl-bar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); opacity: 0.75; }
+.tvl-val { font-family: var(--font-mono); text-align: right; }
+
 /* ---------- intel: CTA ---------- */
 .intel-cta {
   text-align: center; border: 1px solid var(--panel-border); border-radius: var(--radius);
