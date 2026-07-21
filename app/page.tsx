@@ -91,6 +91,7 @@ export default async function Home() {
                   sparkline={s.sparkline}
                   signals={s.signals}
                   secondaryChange={{ label: '20D', value: s.signals.change20d }}
+                  winRate={s.winRate}
                 />
               ))}
             </div>
@@ -109,7 +110,7 @@ export default async function Home() {
               <table className="watch-table">
                 <thead>
                   <tr>
-                    <th>Asset</th><th>Price</th><th>1D</th><th>20D</th><th>RSI</th><th>Trend</th><th>Score</th>
+                    <th>Asset</th><th>Price</th><th>1D</th><th>20D</th><th>RSI</th><th>Trend</th><th>Win rate</th><th>Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -121,6 +122,18 @@ export default async function Home() {
                       <td className={`chg ${pctClass(s.signals.change20d)}`}>{fmtPct(s.signals.change20d)}</td>
                       <td>{s.signals.rsi14 === null ? '—' : Math.round(s.signals.rsi14)}</td>
                       <td>{TREND_LABEL[s.signals.trend]}</td>
+                      <td>
+                        {s.winRate ? (
+                          <span
+                            className={`chg ${s.winRate.winRatePct >= 55 ? 'up' : s.winRate.winRatePct < 45 ? 'down' : 'flat'}`}
+                            title={`${s.winRate.direction === 'up' ? 'Up' : 'Down'} over next ${s.winRate.horizonDays} sessions in ${s.winRate.winRatePct}% of ${s.winRate.sampleSize} similar past setups`}
+                          >
+                            {s.winRate.winRatePct}%
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td>
                         <span className="score-cell">
                           {s.signals.score}
@@ -161,6 +174,7 @@ export default async function Home() {
                   sparkline={c.sparkline}
                   signals={c.signals}
                   secondaryChange={{ label: '7D', value: c.change7d }}
+                  winRate={c.winRate}
                 />
               ))}
             </div>
@@ -200,8 +214,10 @@ export default async function Home() {
             Market data: Yahoo Finance / Stooq / CoinGecko free endpoints — delayed and best-effort.
           </span>
           <span>
-            Scores and zones are deterministic technical calculations, not recommendations. Nothing here is
-            financial advice; do your own research and never risk money you cannot afford to lose.
+            Scores and zones are deterministic technical calculations, not recommendations. Win rates are
+            walk-forward historical frequencies (same-setup days, 5-session horizon, ~6-month window) — past
+            frequency is not future probability. Nothing here is financial advice; do your own research and
+            never risk money you cannot afford to lose.
           </span>
         </footer>
       </div>

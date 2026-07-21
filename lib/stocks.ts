@@ -1,4 +1,5 @@
 import { computeSignals, Signals, SeriesPoint } from './indicators';
+import { backtestWinRate, WinRateResult } from './backtest';
 
 export interface StockCardData {
   symbol: string;
@@ -7,6 +8,7 @@ export interface StockCardData {
   currency: string;
   sparkline: number[]; // last ~60 closes
   signals: Signals;
+  winRate: WinRateResult | null;
 }
 
 // Curated liquid large-cap watchlist (the vendored engine analyses a
@@ -92,6 +94,7 @@ async function buildCard(entry: (typeof WATCHLIST)[number]): Promise<StockCardDa
     currency: 'USD',
     sparkline: series.slice(-60).map((p) => p.close),
     signals,
+    winRate: backtestWinRate(series, signals),
   };
 }
 

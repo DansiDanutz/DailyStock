@@ -1,4 +1,5 @@
-import { computeSignals, Signals } from './indicators';
+import { computeSignals, Signals, SeriesPoint } from './indicators';
+import { backtestWinRate, WinRateResult } from './backtest';
 
 export interface CryptoCardData {
   id: string;
@@ -10,9 +11,33 @@ export interface CryptoCardData {
   marketCapRank: number;
   sparkline: number[];
   signals: Signals;
+  winRate: WinRateResult | null;
 }
 
 const REVALIDATE_SECONDS = 900;
+const HISTORY_REVALIDATE_SECONDS = 3600; // win-rate history moves slowly
+
+/** 180 days of daily closes — the walk-forward window for crypto win rates. */
+async function getDailyHistory(id: string): Promise<SeriesPoint[] | null> {
+  try {
+    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=180`;
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: HISTORY_REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const prices: [number, number][] = json?.prices ?? [];
+    const series = prices
+      .map(([, p]) => Number(p))
+      .filter(Number.isFinite)
+      .map((p) => ({ close: p, high: p, low: p }));
+    return series.length >= 90 ? series : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * CoinGecko free API — top coins by market cap with 7d sparkline.
@@ -41,29 +66,35 @@ export async function getCryptoCards(limit = 9): Promise<CryptoCardData[]> {
       'figure-heloc', 'blackrock-usd-institutional-digital-liquidity-fund',
     ]);
 
-    return coins
-      .filter((c) => !EXCLUDED.has(c.id))
-      .slice(0, limit)
-      .map((c) => {
-        const prices: number[] = c.sparkline_in_7d?.price ?? [];
-        // Hourly 7d sparkline → treat each point as a pseudo-candle for scoring.
-        const series = prices.map((p) => ({ close: p, high: p, low: p }));
-        const signals: Signals = computeSignals(series);
-        // 24h/7d change from the API is more authoritative than sparkline-derived.
-        signals.change1d = c.price_change_percentage_24h_in_currency ?? signals.change1d;
-        return {
-          id: c.id,
-          symbol: (c.symbol as string).toUpperCase(),
-          name: c.name as string,
-          price: c.current_price as number,
-          change24h: c.price_change_percentage_24h_in_currency ?? null,
-          change7d: c.price_change_percentage_7d_in_currency ?? null,
-          marketCapRank: c.market_cap_rank as number,
-          sparkline: prices.filter((_, i) => i % 3 === 0), // thin to ~56 pts
-          signals,
-        };
-      })
-      .sort((a, b) => b.signals.score - a.signals.score);
+    const selected = coins.filter((c) => !EXCLUDED.has(c.id)).slice(0, limit);
+
+    // Histories fetched sequentially with a small stagger — CoinGecko's free
+    // tier rate-limits bursts, and these are hourly-cached anyway.
+    const cards: CryptoCardData[] = [];
+    for (const c of selected) {
+      const prices: number[] = c.sparkline_in_7d?.price ?? [];
+      const hourlySeries = prices.map((p) => ({ close: p, high: p, low: p }));
+      const daily = await getDailyHistory(c.id);
+      // Daily series (180d) gives a real trend read + walk-forward win rate;
+      // the 7d hourly sparkline is the fallback scoring basis.
+      const signals: Signals = computeSignals(daily ?? hourlySeries);
+      // 24h change from the API is more authoritative than series-derived.
+      signals.change1d = c.price_change_percentage_24h_in_currency ?? signals.change1d;
+      cards.push({
+        id: c.id,
+        symbol: (c.symbol as string).toUpperCase(),
+        name: c.name as string,
+        price: c.current_price as number,
+        change24h: c.price_change_percentage_24h_in_currency ?? null,
+        change7d: c.price_change_percentage_7d_in_currency ?? null,
+        marketCapRank: c.market_cap_rank as number,
+        sparkline: prices.filter((_, i) => i % 3 === 0), // thin to ~56 pts
+        signals,
+        winRate: daily ? backtestWinRate(daily, signals) : null,
+      });
+      if (daily) await new Promise((r) => setTimeout(r, 150));
+    }
+    return cards.sort((a, b) => b.signals.score - a.signals.score);
   } catch {
     return [];
   }

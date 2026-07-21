@@ -6,6 +6,7 @@ import { getPulseBundle } from '@/lib/pulse';
 import { getFundingRates } from '@/lib/funding';
 import { fuse, FusionVerdict } from '@/lib/fusion';
 import type { Metadata } from 'next';
+import type { WinRateResult } from '@/lib/backtest';
 
 export const revalidate = 300; // 5 min — intelligence moves faster than the daily board
 
@@ -38,7 +39,7 @@ const biasClass = (bias: string) => {
 const voteGlyph = (v: 1 | 0 | -1) => (v === 1 ? '▲' : v === -1 ? '▼' : '•');
 const voteClass = (v: 1 | 0 | -1) => (v === 1 ? 'up' : v === -1 ? 'down' : 'flat');
 
-function VerdictCard({ v, price }: { v: FusionVerdict; price: number | null }) {
+function VerdictCard({ v, price, winRate }: { v: FusionVerdict; price: number | null; winRate?: WinRateResult | null }) {
   return (
     <article className={`verdict-card ${v.verdict}`}>
       <div className="verdict-top">
@@ -47,6 +48,12 @@ function VerdictCard({ v, price }: { v: FusionVerdict; price: number | null }) {
       </div>
       <div className={`verdict-label ${v.verdict}`}>{v.label}</div>
       <p className="verdict-detail">{v.detail}</p>
+      {winRate && (
+        <p className="verdict-detail" title="Walk-forward frequency for the momentum lens: same-setup days, 5-session horizon, ~6-month window">
+          Momentum lens hist. win rate: <strong className={winRate.winRatePct >= 55 ? 'chg up' : winRate.winRatePct < 45 ? 'chg down' : 'chg flat'}>{winRate.winRatePct}%</strong>{' '}
+          ({winRate.direction === 'up' ? '▲' : '▼'} {winRate.horizonDays}d, n={winRate.sampleSize})
+        </p>
+      )}
       <div className="lens-row">
         <span className={`lens ${voteClass(v.votes.momentum)}`} title="DailyStock composite momentum score">
           {voteGlyph(v.votes.momentum)} Momentum
@@ -198,7 +205,12 @@ export default async function IntelPage() {
         </div>
         <div className="card-grid">
           {verdicts.map((v) => (
-            <VerdictCard key={v.symbol} v={v} price={bundle.liquidations.get(v.symbol)?.currentPrice ?? bySymbol.get(v.symbol)?.price ?? null} />
+            <VerdictCard
+              key={v.symbol}
+              v={v}
+              price={bundle.liquidations.get(v.symbol)?.currentPrice ?? bySymbol.get(v.symbol)?.price ?? null}
+              winRate={bySymbol.get(v.symbol)?.winRate}
+            />
           ))}
         </div>
       </section>

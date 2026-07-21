@@ -1,6 +1,7 @@
 import Sparkline from './Sparkline';
 import ScoreDial from './ScoreDial';
 import { Signals, TREND_LABEL } from '@/lib/indicators';
+import type { WinRateResult } from '@/lib/backtest';
 
 export interface AssetCardProps {
   rank: number;
@@ -12,6 +13,7 @@ export interface AssetCardProps {
   sparkline: number[];
   signals: Signals;
   secondaryChange?: { label: string; value: number | null };
+  winRate?: WinRateResult | null;
 }
 
 const fmtPrice = (v: number) =>
@@ -27,7 +29,7 @@ const fmtPct = (v: number | null) =>
 const chgClass = (v: number | null) => (v === null ? 'flat' : v >= 0.02 ? 'up' : v <= -0.02 ? 'down' : 'flat');
 
 export default function AssetCard(props: AssetCardProps) {
-  const { rank, symbol, name, price, changePct, changeLabel, sparkline, signals, secondaryChange } = props;
+  const { rank, symbol, name, price, changePct, changeLabel, sparkline, signals, secondaryChange, winRate } = props;
   const positive = (changePct ?? 0) >= 0;
   return (
     <article className={`asset-card${rank === 1 ? ' rank-1' : ''}`}>
@@ -61,6 +63,18 @@ export default function AssetCard(props: AssetCardProps) {
         <span className={`trend-pill ${signals.trend}`}>{TREND_LABEL[signals.trend]}</span>
         <span className="rsi-note">RSI {signals.rsi14 === null ? '—' : Math.round(signals.rsi14)}</span>
       </div>
+
+      {winRate && (
+        <div
+          className={`winrate ${winRate.winRatePct >= 55 ? 'good' : winRate.winRatePct < 45 ? 'poor' : 'mid'}`}
+          title={`Of the ${winRate.sampleSize} past days with a setup like today's, ${winRate.winRatePct}% saw price move ${winRate.direction} over the next ${winRate.horizonDays} sessions. Historical frequency, not a prediction.`}
+        >
+          <span className="wr-num">{winRate.winRatePct}%</span>
+          <span className="wr-label">
+            hist. win rate · {winRate.direction === 'up' ? '▲' : '▼'} {winRate.horizonDays}d · n={winRate.sampleSize}
+          </span>
+        </div>
+      )}
 
       {(signals.supportZone !== null || signals.resistanceZone !== null) && (
         <div className="zones">
