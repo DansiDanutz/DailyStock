@@ -17,26 +17,35 @@ export interface CryptoCardData {
 const REVALIDATE_SECONDS = 900;
 const HISTORY_REVALIDATE_SECONDS = 3600; // win-rate history moves slowly
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /** 180 days of daily closes — the walk-forward window for crypto win rates. */
 async function getDailyHistory(id: string): Promise<SeriesPoint[] | null> {
-  try {
-    const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=180`;
-    const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      next: { revalidate: HISTORY_REVALIDATE_SECONDS },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const prices: [number, number][] = json?.prices ?? [];
-    const series = prices
-      .map(([, p]) => Number(p))
-      .filter(Number.isFinite)
-      .map((p) => ({ close: p, high: p, low: p }));
-    return series.length >= 90 ? series : null;
-  } catch {
-    return null;
+  const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=180`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        next: { revalidate: HISTORY_REVALIDATE_SECONDS },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.status === 429 && attempt === 0) {
+        await sleep(2_500); // free-tier rate limit — back off once and retry
+        continue;
+      }
+      if (!res.ok) return null;
+      const json = await res.json();
+      const prices: [number, number][] = json?.prices ?? [];
+      const series = prices
+        .map(([, p]) => Number(p))
+        .filter(Number.isFinite)
+        .map((p) => ({ close: p, high: p, low: p }));
+      return series.length >= 90 ? series : null;
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
 
 /**
@@ -92,7 +101,7 @@ export async function getCryptoCards(limit = 9): Promise<CryptoCardData[]> {
         signals,
         winRate: daily ? backtestWinRate(daily, signals) : null,
       });
-      if (daily) await new Promise((r) => setTimeout(r, 150));
+      await sleep(400); // pace every history call — successes and 429s alike
     }
     return cards.sort((a, b) => b.signals.score - a.signals.score);
   } catch {
