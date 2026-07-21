@@ -33,6 +33,13 @@ lib/                  # indicators (SMA/RSI/score), stock & crypto fetchers, tip
 daily_stock_analysis/ # vendored upstream Python engine (unmodified, MIT)
 ```
 
+## Automation
+
+- `.github/workflows/hourly-refresh.yml` pings `/` and `/intel` hourly so the
+  ISR cache regenerates even with zero traffic — data is never more than ~1h stale.
+- Planned research lane on top of [HKUDS/Vibe-Trading](https://github.com/HKUDS/Vibe-Trading):
+  see [docs/VIBE-TRADING.md](docs/VIBE-TRADING.md).
+
 ## Disclaimer
 
 Scores and zones are deterministic technical calculations, **not recommendations**.

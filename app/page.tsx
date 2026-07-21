@@ -22,6 +22,9 @@ export default async function Home() {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC',
   });
+  const generatedAt = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+  });
 
   return (
     <>
@@ -34,7 +37,7 @@ export default async function Home() {
           <div className="header-meta">
             <a className="nav-link" href="/intel">Crypto Intel →</a>
             <span className="live-dot" aria-hidden="true" />
-            <span>{today}</span>
+            <span>{today} · {generatedAt} UTC · auto-refresh hourly</span>
           </div>
         </header>
 
