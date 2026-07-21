@@ -3,6 +3,7 @@ import ScoreDial from '@/components/ScoreDial';
 import { getCryptoCards } from '@/lib/crypto';
 import { getIntelBundle, INTEL_SYMBOLS } from '@/lib/zmarty';
 import { getPulseBundle } from '@/lib/pulse';
+import { getFundingRates } from '@/lib/funding';
 import { fuse, FusionVerdict } from '@/lib/fusion';
 import type { Metadata } from 'next';
 
@@ -62,7 +63,12 @@ function VerdictCard({ v, price }: { v: FusionVerdict; price: number | null }) {
 }
 
 export default async function IntelPage() {
-  const [bundle, cryptoCards, pulse] = await Promise.all([getIntelBundle(), getCryptoCards(20), getPulseBundle()]);
+  const [bundle, cryptoCards, pulse, funding] = await Promise.all([
+    getIntelBundle(),
+    getCryptoCards(20),
+    getPulseBundle(),
+    getFundingRates(INTEL_SYMBOLS),
+  ]);
   const bySymbol = new Map(cryptoCards.map((c) => [c.symbol, c]));
 
   const verdicts = INTEL_SYMBOLS.map((sym) =>
@@ -299,6 +305,51 @@ export default async function IntelPage() {
           crowd is being forced out — and forced exits are fuel for the move that caused them.
         </p>
       </section>
+
+      {funding.length > 0 && (
+        <section aria-labelledby="funding-heading">
+          <div className="section-head">
+            <h2 id="funding-heading">
+              <span className="kicker">Derivatives · what the crowd pays to stay positioned</span>
+              Perp funding rates
+            </h2>
+            <span className="meta">OKX · Hyperliquid fallback · 8h window</span>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="watch-table">
+              <thead>
+                <tr>
+                  <th>Asset</th><th>Funding / 8h</th><th>Annualized</th><th>Source</th><th>Crowd read</th>
+                </tr>
+              </thead>
+              <tbody>
+                {funding.map((f) => (
+                  <tr key={f.symbol}>
+                    <td><span className="sym">{f.symbol}</span></td>
+                    <td className={`chg ${f.rate8hPct >= 0 ? 'up' : 'down'}`}>
+                      {f.rate8hPct >= 0 ? '+' : ''}{f.rate8hPct.toFixed(4)}%
+                    </td>
+                    <td className={`chg ${f.annualizedPct >= 0 ? 'up' : 'down'}`}>
+                      {f.annualizedPct >= 0 ? '+' : ''}{f.annualizedPct.toFixed(1)}%
+                    </td>
+                    <td><span className="rsi-note">{f.source}</span></td>
+                    <td>
+                      <span className={`trend-pill ${f.crowd === 'longs-crowded' ? 'bearish' : f.crowd === 'shorts-crowded' ? 'bullish' : 'neutral'}`}>
+                        {f.crowd === 'longs-crowded' ? 'Longs crowded' : f.crowd === 'shorts-crowded' ? 'Shorts crowded' : 'Balanced'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="section-note">
+            Positive funding means longs pay shorts every 8 hours to keep their position — the more they pay, the
+            more crowded the upside bet. Negative funding means shorts are paying, which is squeeze fuel. Extremes
+            in either direction are contrarian warnings, not entry tickets.
+          </p>
+        </section>
+      )}
 
       <section aria-labelledby="mtf-heading">
         <div className="section-head">
