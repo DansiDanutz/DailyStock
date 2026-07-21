@@ -31,7 +31,15 @@ export async function getCryptoCards(limit = 9): Promise<CryptoCardData[]> {
     if (!res.ok) return [];
     const coins: any[] = await res.json();
 
-    const EXCLUDED = new Set(['tether', 'usd-coin', 'dai', 'staked-ether', 'wrapped-bitcoin', 'weth', 'usds', 'ethena-usde', 'wrapped-steth', 'wrapped-eeth']);
+    // stablecoins, wrapped/staked duplicates, and tokenized RWA products —
+    // nothing meaningful to "signal" on a peg or a note
+    const EXCLUDED = new Set([
+      'tether', 'usd-coin', 'dai', 'usds', 'ethena-usde', 'susds', 'first-digital-usd',
+      'binance-bridged-usdt-bnb-smart-chain', 'paypal-usd', 'usdt0', 'usde',
+      'staked-ether', 'wrapped-bitcoin', 'weth', 'wrapped-steth', 'wrapped-eeth',
+      'coinbase-wrapped-btc', 'binance-staked-sol', 'lombard-staked-btc',
+      'figure-heloc', 'blackrock-usd-institutional-digital-liquidity-fund',
+    ]);
 
     return coins
       .filter((c) => !EXCLUDED.has(c.id))
