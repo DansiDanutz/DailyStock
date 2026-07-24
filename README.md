@@ -11,7 +11,7 @@ large-cap watchlist **and** the top crypto assets (stablecoins excluded). A dail
 
 ## Stack
 
-- **Next.js 15** (App Router, React Server Components, ISR — data revalidates every 15 min)
+- **Next.js 16** (App Router, React Server Components, ISR — data revalidates every 15 min)
 - Zero client-side JS for the dashboard — sparklines and score dials are pure SVG
 - **Data**: Yahoo Finance chart API (with Stooq CSV fallback) for equities & indices, CoinGecko free API for crypto. No API keys required.
 - Deployed on **Vercel**
@@ -19,9 +19,11 @@ large-cap watchlist **and** the top crypto assets (stablecoins excluded). A dail
 ## Develop
 
 ```bash
-npm install
+npm ci
 npm run dev    # http://localhost:3000
 npm run build  # production build (tsc + next)
+npm run lint   # TypeScript validation
+npm run audit:ci # bounded production dependency audit
 ```
 
 ## Structure
@@ -37,6 +39,8 @@ daily_stock_analysis/ # vendored upstream Python engine (unmodified, MIT)
 
 - `.github/workflows/hourly-refresh.yml` pings `/` and `/intel` hourly so the
   ISR cache regenerates even with zero traffic — data is never more than ~1h stale.
+- `.github/workflows/verify.yml` installs from the lockfile, validates TypeScript,
+  builds the production app, and enforces the production dependency audit policy.
 - Planned research lane on top of [HKUDS/Vibe-Trading](https://github.com/HKUDS/Vibe-Trading):
   see [docs/VIBE-TRADING.md](docs/VIBE-TRADING.md).
 
