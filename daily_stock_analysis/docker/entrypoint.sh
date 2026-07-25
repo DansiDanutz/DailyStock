@@ -8,6 +8,8 @@ APP_GID="1000"
 WRITABLE_DIRS="/app/data /app/logs /app/reports /home/dsa/.longbridge"
 DATABASE_FILE="${DATABASE_PATH:-/app/data/stock_analysis.db}"
 
+python /app/scripts/check_python_runtime.py
+
 warn() {
     printf '%s\n' "$*" >&2
 }

@@ -11,7 +11,10 @@ Daily Stock Analysis - FastAPI 后端服务入口
 4. 托管前端静态文件（生产模式）
 
 启动方式：
-    uvicorn server:app --reload --host 0.0.0.0 --port 8000
+    python main.py --serve-only
+
+兼容入口 ``server:app`` 始终要求管理员认证已在带外完成配置，因为
+外部 ASGI runner 提供的实际监听地址无法从应用对象中可靠获知。
     
     或使用 main.py:
     python main.py --serve-only      # 仅启动 API 服务
@@ -22,11 +25,20 @@ import logging
 
 from src.config import setup_env, get_config
 from src.logging_config import setup_logging
+from src.web_security import ensure_public_webui_is_provisioned
 
 # 初始化环境变量与日志
 setup_env()
 
 config = get_config()
+bind_host = config.webui_host or "127.0.0.1"
+bind_port = config.webui_port or 8000
+
+# ``server:app`` cannot observe a host supplied to an external ASGI runner.
+# Treat this legacy exported entry point as public and require credentials to
+# have been provisioned before the app object is made available. The main.py
+# entry point remains suitable for unauthenticated loopback development.
+ensure_public_webui_is_provisioned("0.0.0.0")
 level_name = (config.log_level or "INFO").upper()
 level = getattr(logging, level_name, logging.INFO)
 
@@ -48,7 +60,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "server:app",
-        host="0.0.0.0",
-        port=8000,
+        host=bind_host,
+        port=bind_port,
         reload=True,
     )

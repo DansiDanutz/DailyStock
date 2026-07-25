@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 > For user-friendly release highlights, see the [GitHub Releases](https://github.com/ZhuLinsen/daily_stock_analysis/releases) page.
 
 ## [Unreleased]
+- [修复] WebUI/API 绑定 `0.0.0.0`、`::` 或 `*` 时强制要求管理员认证，修复 Docker 默认公开监听仅告警不阻断、Compose 注入的认证开关未被读取，以及容器健康检查永远成功的问题。
+- [改进] 启动时明确拒绝 Python 3.14，并记录当前依赖契约支持 Python 3.10–3.13，避免在 tiktoken/PyO3 构建阶段才失败。
 - [修复] 恢复 vendored engine 的 `.env.example` 配置契约，并确保嵌套与根目录忽略规则只允许提交该占位模板，不放宽真实环境文件保护。
 - [新功能] 新增 `--portfolio futu`，只读导入 Futu OpenD 真实账户的沪深 A 股、港股、美股 LONG 正股持仓作为分析列表。
 <!-- 新条目格式：- [类型] 描述（类型取值：新功能/改进/修复/文档/测试/chore）-->

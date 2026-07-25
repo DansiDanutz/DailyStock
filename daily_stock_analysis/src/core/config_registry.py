@@ -3254,7 +3254,7 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     },
     "ADMIN_AUTH_ENABLED": {
         "title": "Admin Auth Enabled",
-        "description": "Enable password protection for Web UI. The first visit initializes the admin password.",
+        "description": "Enable password protection for Web UI. Provision a password with the reset_password CLI before any non-loopback bind; loopback-only use may initialize it on first visit.",
         "category": "system",
         "data_type": "boolean",
         "ui_control": "switch",

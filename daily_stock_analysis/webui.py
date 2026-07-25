@@ -39,8 +39,10 @@ def main() -> int:
         import uvicorn
         from src.config import setup_env
         from src.logging_config import setup_logging
+        from src.web_security import ensure_public_webui_is_provisioned
 
         setup_env()
+        ensure_public_webui_is_provisioned(host)
         setup_logging(log_prefix="web_server")
 
         uvicorn.run(
