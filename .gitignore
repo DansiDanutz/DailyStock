@@ -29,3 +29,4 @@ __pycache__/
 *.pyc
 .venv/
 .env*
+!daily_stock_analysis/.env.example
