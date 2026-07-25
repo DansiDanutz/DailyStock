@@ -1369,6 +1369,8 @@ Backtesting triggers automatically after the daily analysis flow completes (non-
 
 The WebUI and FastAPI API share the same service process. After startup, use the browser workspace for configuration management, manual analysis, task progress, historical reports, backtesting, portfolio management, and smart import. Authentication, cloud-server access, and API usage details are covered below.
 
+Binding the service to `0.0.0.0`, `::`, or `*` requires `ADMIN_AUTH_ENABLED=true` and an existing credential provisioned with `python -m src.auth reset_password`; startup fails closed otherwise. Authentication may remain disabled only for loopback-only use.
+
 ### FastAPI API Service
 
 FastAPI provides RESTful API service for configuration management and triggering analysis.

@@ -191,21 +191,39 @@ class MainScheduleModeTestCase(unittest.TestCase):
         self.assertEqual(effective_region, "jp,kr")
         self.assertFalse(should_skip_all)
 
-    def test_public_webui_bind_warns_when_auth_is_disabled(self) -> None:
+    def test_public_webui_bind_fails_when_auth_is_disabled(self) -> None:
         with patch("src.auth.is_auth_enabled", return_value=False), \
-             patch("main.logger.warning") as warning_log:
-            main._warn_if_public_webui_without_auth("0.0.0.0")
+             patch("src.auth.has_stored_password", return_value=False):
+            with self.assertRaises(RuntimeError) as caught:
+                main._ensure_public_webui_auth("0.0.0.0")
 
-        warning_log.assert_called_once()
-        self.assertIn("WEBUI_HOST=%s", warning_log.call_args.args[0])
-        self.assertEqual(warning_log.call_args.args[1], "0.0.0.0")
+        self.assertIn("ADMIN_AUTH_ENABLED=true", str(caught.exception))
 
-    def test_loopback_webui_bind_does_not_warn_when_auth_is_disabled(self) -> None:
+    def test_loopback_webui_bind_allows_auth_disabled(self) -> None:
         with patch("src.auth.is_auth_enabled", return_value=False), \
-             patch("main.logger.warning") as warning_log:
-            main._warn_if_public_webui_without_auth("127.0.0.1")
+             patch("src.auth.has_stored_password", return_value=False):
+            main._ensure_public_webui_auth("127.0.0.1")
+            main._ensure_public_webui_auth("::1")
+            main._ensure_public_webui_auth("localhost")
 
-        warning_log.assert_not_called()
+    def test_specific_non_loopback_bind_fails_when_auth_is_disabled(self) -> None:
+        with patch("src.auth.is_auth_enabled", return_value=False), \
+             patch("src.auth.has_stored_password", return_value=False):
+            with self.assertRaises(RuntimeError):
+                main._ensure_public_webui_auth("192.168.1.20")
+
+    def test_public_webui_bind_fails_when_password_is_not_provisioned(self) -> None:
+        with patch("src.auth.is_auth_enabled", return_value=True), \
+             patch("src.auth.has_stored_password", return_value=False):
+            with self.assertRaises(RuntimeError) as caught:
+                main._ensure_public_webui_auth("0.0.0.0")
+
+        self.assertIn("reset_password", str(caught.exception))
+
+    def test_public_webui_bind_allows_provisioned_auth(self) -> None:
+        with patch("src.auth.is_auth_enabled", return_value=True), \
+             patch("src.auth.has_stored_password", return_value=True):
+            main._ensure_public_webui_auth("0.0.0.0")
 
     def test_web_service_bind_uses_config_when_cli_omits_host_and_port(self) -> None:
         args = self._make_args(host=None, port=None)
@@ -254,6 +272,8 @@ class MainScheduleModeTestCase(unittest.TestCase):
             observed_bind.append((host, port))
 
         with patch.dict(os.environ, {"GITHUB_ACTIONS": "false"}, clear=False), \
+             patch("src.auth.is_auth_enabled", return_value=True), \
+             patch("src.auth.has_stored_password", return_value=True), \
              patch("main.parse_arguments", return_value=args), \
              patch("main.get_config", return_value=config), \
              patch("main.prepare_webui_frontend_assets", return_value=True), \

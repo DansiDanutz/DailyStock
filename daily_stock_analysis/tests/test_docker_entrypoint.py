@@ -26,6 +26,35 @@ def test_dockerfile_uses_entrypoint_to_drop_privileges() -> None:
     assert "USER dsa" not in dockerfile
 
 
+def test_docker_healthcheck_cannot_succeed_after_all_probes_fail() -> None:
+    dockerfile = (REPO_ROOT / "docker" / "Dockerfile").read_text(encoding="utf-8")
+    compose = yaml.safe_load((REPO_ROOT / "docker" / "docker-compose.yml").read_text(encoding="utf-8"))
+    server_healthcheck = compose["services"]["server"]["healthcheck"]
+
+    assert "HEALTHCHECK" not in dockerfile
+    assert "/api/health" in server_healthcheck["test"][1]
+    assert "sys.exit(0)" not in server_healthcheck["test"][1]
+    assert "healthcheck" not in compose["services"]["analyzer"]
+
+
+def test_docker_entrypoint_enforces_python_runtime_before_start() -> None:
+    entrypoint = (REPO_ROOT / "docker" / "entrypoint.sh").read_text(encoding="utf-8")
+
+    assert "scripts/check_python_runtime.py" in entrypoint
+
+
+def test_authenticated_api_smoke_is_syntax_valid_and_asserts_boundaries() -> None:
+    smoke = REPO_ROOT / "scripts" / "smoke_authenticated_api.sh"
+    subprocess.run(["sh", "-n", str(smoke)], check=True)
+    text = smoke.read_text(encoding="utf-8")
+
+    assert 'unauth_status" = "401' in text
+    assert 'login_status" = "200' in text
+    assert 'auth_status" = "200' in text
+    assert "DSA_SMOKE_PASSWORD" in text
+    assert "rm -rf" in text
+
+
 def test_dockerfile_bundles_default_alphasift_adapter() -> None:
     dockerfile = (REPO_ROOT / "docker" / "Dockerfile").read_text(encoding="utf-8")
     requirements = (REPO_ROOT / "requirements.txt").read_text(encoding="utf-8")
@@ -141,6 +170,7 @@ def _prepare_fake_entrypoint_tools(tmp_path: Path, find_body: str) -> tuple[Path
         'if [ "${1:-}" = "-u" ]; then printf "0\\n"; else printf "0\\n"; fi\n',
     )
     _write_fake_command(fakebin, "mkdir", "exit 0\n")
+    _write_fake_command(fakebin, "python", "exit 0\n")
     _write_fake_command(fakebin, "find", find_body)
     _write_fake_command(
         fakebin,

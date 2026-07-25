@@ -97,6 +97,8 @@ Data is automatically saved to host directories:
 
 The Docker image startup entrypoint automatically creates and fixes ownership for the mounted `./data`, `./logs`, and `./reports` directories, then drops privileges to the non-root `dsa` user (UID 1000). Normal deployments do not require manual host-side `chown` / `chmod`.
 
+Before starting the Web/API service on a non-loopback address, set `ADMIN_AUTH_ENABLED=true` in `.env` and provision the credential out of band with `python -m src.auth reset_password`; the service fails closed otherwise. The scheduled analyzer does not expose the Web/API port and does not require this setting.
+
 If you explicitly set `--user` / Compose `user:`, or use read-only mounts, rootless Docker, NFS, or another environment that prevents the container from fixing ownership, make sure the actual runtime user can write to these directories.
 
 ---
